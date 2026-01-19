@@ -176,13 +176,13 @@ REPEAT until all acceptance criteria met OR max iterations reached:
 
 ### Feedback Loops (run after EVERY change)
 
-**For frontend changes:**
+**For frontend changes (swarm project):**
 ```bash
 # Lint check (includes formatting and import organization)
 pnpm lint
-# or: npm run lint
 
 # If node_modules not installed, skip local linting - CI will catch issues
+# The CI runs: biome check ./src --linter-enabled=true --formatter-enabled=false
 ```
 
 **For all changes:**
@@ -206,6 +206,7 @@ Before marking implementation complete:
 2. **Verify all acceptance criteria are met**
 3. **Check for any console errors/warnings**
 4. **Review changes for security issues**
+5. **Visual validation (for frontend changes)** - see below
 
 If tests fail:
 - Do NOT proceed to PR
@@ -213,13 +214,55 @@ If tests fail:
 - Re-run validation
 - Continue loop until ALL tests pass
 
+#### Visual Validation (Frontend Changes Only)
+
+When the task involves UI changes, use `agent-browser` to validate visually:
+
+```bash
+# 1. Ensure dev server is running (in another terminal)
+# pnpm dev  # or whatever starts the local server
+
+# 2. Open the page with changes
+agent-browser open http://localhost:3000
+
+# 3. Navigate to the changed component/page
+agent-browser snapshot  # Get element refs
+agent-browser click @nav-link  # or use CSS selector
+
+# 4. Take screenshot for PR
+agent-browser screenshot pr-screenshots/{TICKET_ID}-$(date +%Y%m%d).png
+
+# 5. Validate accessibility
+agent-browser snapshot  # Check for proper ARIA labels, roles
+
+# 6. Test responsive (optional)
+agent-browser close
+agent-browser open http://localhost:3000 --viewport 375x812
+agent-browser screenshot pr-screenshots/{TICKET_ID}-mobile.png
+
+# 7. Clean up
+agent-browser close
+```
+
+**When to use visual validation:**
+- New UI components
+- Layout changes
+- Styling updates
+- Responsive design changes
+- Accessibility improvements
+
+**Skip visual validation when:**
+- Backend-only changes
+- No dev server available
+- Pure refactoring without visual changes
+
 ### Phase 5: PR Creation
 
 When all tests pass and acceptance criteria are met:
 
 1. **Final commit** (if any uncommitted changes)
 
-2. **Use /create-pr command** to create the PR
+2. **Use /beehiiv:create-pr skill** to create the PR
 
 3. **Output completion promise:**
    ```
@@ -271,9 +314,17 @@ If you discover:
 
 At end of workflow, summarize learnings for user to review and add to CLAUDE.md.
 
-### Common Patterns
+### Common Patterns (swarm/beehiiv)
 
-**CSS variables for responsive styles:**
+**Dream Components - Mobile responsive attributes:**
+When adding mobile-specific settings to dream-components:
+1. Add `mobile{Property}` to type definition (e.g., `mobileWidth`, `mobilePadding`)
+2. Use CSS variables in styles: `var(--mobile-width, var(--width))`
+3. Pass CSS variables in component: `'--mobile-width': mobileWidth`
+4. Update BOTH the component AND the view file (e.g., `SignupModalView.tsx`)
+5. Use `AddableSettings` + `SimpleLengthSettings` for optional mobile overrides in settings panel
+
+**Dream Components - CSS variables for responsive styles:**
 Always use CSS variables, NOT inline styles for responsive properties. Inline styles override CSS media queries.
 ```tsx
 // ✓ Correct
