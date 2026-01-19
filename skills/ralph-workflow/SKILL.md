@@ -27,6 +27,23 @@ Parse the input for:
 - `--max-iterations <n>` - Max iterations (default: 10 for small, 30 for large)
 - `--skip-prd` - Skip PRD generation phase
 
+## Output Format
+
+**IMPORTANT:** Keep output minimal and focused. Each iteration outputs ONLY:
+
+```
+## {TICKET_ID} - Iteration {N}/{max}
+
+- [x] Task 1 description
+- [x] Task 2 description
+- [ ] **→ Task 3 description** (current)
+- [ ] Task 4 description
+
+Status: ✓ Lint | ✓ Tests | ✓ Committed
+```
+
+No verbose explanations. Just the task list with progress markers.
+
 ## Workflow Phases
 
 ### Phase 0: Setup & Context Gathering
@@ -36,242 +53,144 @@ Parse the input for:
    Use mcp__plugin_linear_linear__get_issue to fetch ticket details
    ```
 
-2. **Analyze ticket scope:**
-   - Small task (bug fix, minor change): 5-10 iterations
-   - Medium task (new feature component): 15-25 iterations
-   - Large task (major feature): 30-50 iterations
+2. **Analyze ticket and create task list:**
+   Break down the ticket into specific implementation tasks. These are the ACTUAL tasks you will complete, not phases.
 
-3. **Create/Update progress.txt:**
+3. **Create progress.txt with goal task list:**
    ```
-   ## Ralph Workflow Progress
+   # {TICKET_ID}: {Ticket Title}
 
-   Ticket: {TICKET_ID}
+   ## Goal Tasks
+   - [ ] Task 1: {specific implementation task}
+   - [ ] Task 2: {specific implementation task}
+   - [ ] Task 3: {specific implementation task}
+   - [ ] Visual validation with Playwright
+   - [ ] Create PR
+
+   ## Current: Task 1
    Started: {timestamp}
-   Iteration: 1
-
-   ### Tasks
-   - [ ] Phase 1: PRD Creation
-   - [ ] Phase 2: Agent Selection
-   - [ ] Phase 3: Implementation
-   - [ ] Phase 4: Testing & Validation
-   - [ ] Phase 5: PR Creation
-
-   ### Progress Log
    ```
 
-4. **Ask clarifying questions if needed:**
-   - If requirements are ambiguous, ASK before proceeding
-   - If technical approach is unclear, ASK
-   - If acceptance criteria missing, ASK
+4. **Output the task list immediately:**
+   ```
+   ## {TICKET_ID} - Starting
 
-### Phase 1: PRD Creation (use project-manager agent)
+   - [ ] Task 1: {description}
+   - [ ] Task 2: {description}
+   - [ ] Task 3: {description}
+   - [ ] Visual validation
+   - [ ] Create PR
+   ```
 
-Use the `project-manager` agent to create a PRD:
+### Phase 1: PRD Creation (Brief)
 
-```markdown
-## PRD: {Ticket Title}
+Create a brief PRD in progress.txt:
 
-### Problem Statement
-{What problem are we solving?}
-
-### Requirements
-1. {Functional requirement 1}
-2. {Functional requirement 2}
-...
-
-### Acceptance Criteria
-- [ ] {Criterion 1}
-- [ ] {Criterion 2}
-...
-
-### Technical Approach
-{High-level technical approach}
-
-### Out of Scope
-{What we're NOT doing}
 ```
-
-Update progress.txt after PRD is complete.
+## PRD
+**Problem:** {one sentence}
+**Solution:** {one sentence}
+**Acceptance Criteria:**
+- {criterion 1}
+- {criterion 2}
+```
 
 ### Phase 2: Agent Selection
 
-Analyze the ticket to determine the best agent:
+Select agent based on task type:
 
-**Use `frontend-developer` agent when:**
-- UI component changes ONLY
-- React/Next.js work without API changes
-- Styling, CSS, Tailwind
-- Client-side state management
-- Accessibility improvements
-- Responsive design
-
-**Use `backend-developer` agent when:**
-- API endpoints ONLY
-- Database changes/migrations without UI
-- Server-side logic
-- Authentication/authorization logic
-- Background jobs
-- External service integrations
-
-**Use `fullstack-developer` agent when:**
-- Feature requires BOTH API and UI changes
-- New feature with database → API → UI flow
-- Data consistency issues between frontend and backend
-- Real-time features (WebSocket/SSE + UI subscriptions)
-- Adding new data models that need API endpoints AND UI components
-- Bug fixes that span multiple layers
-
-**Agent Selection Decision Tree:**
-```
-Does the task require UI changes?
-├── NO → backend-developer
-└── YES → Does the task require API/database changes?
-          ├── NO → frontend-developer
-          └── YES → fullstack-developer
-```
-
-**Examples:**
-| Task | Agent | Reason |
-|------|-------|--------|
-| "Add border radius to button" | frontend-developer | UI only |
-| "Create endpoint for user stats" | backend-developer | API only |
-| "Add user profile page with API" | fullstack-developer | API + UI |
-| "Fix checkout total mismatch" | fullstack-developer | Spans layers |
-| "Add dark mode toggle" | frontend-developer | Client-side only |
-| "Add webhook for payments" | backend-developer | Server-side only |
-| "Add favorites feature" | fullstack-developer | DB + API + UI |
-
-Log agent selection reasoning in progress.txt.
+| Task Type | Agent |
+|-----------|-------|
+| UI/CSS only | frontend-developer |
+| API/DB only | backend-developer |
+| Both UI + API | fullstack-developer |
 
 ### Phase 3: Implementation Loop
 
-For each implementation task, follow this loop:
+For each task:
 
+1. Mark task as current in output
+2. Implement the change
+3. Run feedback loops (lint, tests)
+4. Commit with descriptive message
+5. Mark task complete, move to next
+6. Update progress.txt
+
+**Output per iteration:**
 ```
-REPEAT until all acceptance criteria met OR max iterations reached:
+## {TICKET_ID} - Iteration {N}/{max}
 
-1. Show current task list as checkboxes:
-   - [ ] Task 1 description
-   - [x] Task 2 (completed)
-   - [ ] Task 3 description
+- [x] Find the CSS causing white block
+- [ ] **→ Fix container height** (current)
+- [ ] Test fix locally
+- [ ] Visual validation with Playwright
+- [ ] Create PR
 
-2. Work on next unchecked task
-
-3. After completing task:
-   a. Run feedback loops (see below)
-   b. If frontend changes: run biome
-   c. If tests fail: fix and retry
-   d. Commit the change with descriptive message
-   e. Update progress.txt
-   f. Check task as complete
-
-4. If blocked or uncertain:
-   - ASK the user for clarification
-   - Document the question and answer in progress.txt
-
-5. If you discover something important:
-   - Note it for CLAUDE.md update
-   - Continue implementation
+Status: ✓ Lint | ✓ Tests | ○ Pending commit
 ```
 
-### Feedback Loops (run after EVERY change)
+### Phase 4: Visual Validation
 
-**For frontend changes (swarm project):**
+**IMPORTANT:** For any UI changes, validate visually before creating PR.
+
+#### Use agent-browser CLI (default for frontend):
 ```bash
-# Lint check (includes formatting and import organization)
-pnpm lint
-
-# If node_modules not installed, skip local linting - CI will catch issues
-# The CI runs: biome check ./src --linter-enabled=true --formatter-enabled=false
-```
-
-**For all changes:**
-```bash
-# Run tests relevant to changed files
-pnpm test  # or bundle exec rspec for Ruby
-```
-
-**If linting fails:**
-1. Fix the issue immediately (usually import organization)
-2. Re-run linting
-3. Only proceed when all checks pass
-
-**Note:** If `pnpm lint` fails due to missing node_modules, verify code follows existing patterns and commit - CI will validate.
-
-### Phase 4: Testing & Validation
-
-Before marking implementation complete:
-
-1. **Run full test suite**
-2. **Verify all acceptance criteria are met**
-3. **Check for any console errors/warnings**
-4. **Review changes for security issues**
-5. **Visual validation (for frontend changes)** - see below
-
-If tests fail:
-- Do NOT proceed to PR
-- Fix failing tests
-- Re-run validation
-- Continue loop until ALL tests pass
-
-#### Visual Validation (Frontend Changes Only)
-
-When the task involves UI changes, use `agent-browser` to validate visually:
-
-```bash
-# 1. Ensure dev server is running (in another terminal)
-# pnpm dev  # or whatever starts the local server
-
-# 2. Open the page with changes
+# Open local dev server
 agent-browser open http://localhost:3000
 
-# 3. Navigate to the changed component/page
-agent-browser snapshot  # Get element refs
-agent-browser click @nav-link  # or use CSS selector
+# Get accessibility tree to find elements
+agent-browser snapshot
 
-# 4. Take screenshot for PR
-agent-browser screenshot pr-screenshots/{TICKET_ID}-$(date +%Y%m%d).png
+# Navigate to the page with changes
+agent-browser click @nav-link  # or CSS selector
 
-# 5. Validate accessibility
-agent-browser snapshot  # Check for proper ARIA labels, roles
+# Take screenshot for PR
+agent-browser screenshot {TICKET_ID}-after.png
 
-# 6. Test responsive (optional)
+# Test mobile viewport
 agent-browser close
 agent-browser open http://localhost:3000 --viewport 375x812
-agent-browser screenshot pr-screenshots/{TICKET_ID}-mobile.png
+agent-browser screenshot {TICKET_ID}-mobile.png
 
-# 7. Clean up
+# Clean up
 agent-browser close
 ```
 
-**When to use visual validation:**
-- New UI components
-- Layout changes
-- Styling updates
-- Responsive design changes
-- Accessibility improvements
+#### Use Playwright MCP (for complex multi-step flows):
 
-**Skip visual validation when:**
-- Backend-only changes
-- No dev server available
-- Pure refactoring without visual changes
+When bug requires reproducing a user flow (signup, checkout, forms with CAPTCHA):
+
+```
+1. mcp__plugin_playwright_playwright__browser_navigate - Open URL
+2. mcp__plugin_playwright_playwright__browser_snapshot - Get element refs
+3. mcp__plugin_playwright_playwright__browser_click - Click elements
+4. mcp__plugin_playwright_playwright__browser_type - Fill inputs
+5. mcp__plugin_playwright_playwright__browser_take_screenshot - Capture screenshots
+6. mcp__plugin_playwright_playwright__browser_close - Close browser
+```
+
+**When to use which:**
+
+| Scenario | Tool |
+|----------|------|
+| Simple page screenshot | agent-browser |
+| CSS/layout validation | agent-browser |
+| Responsive testing | agent-browser |
+| Multi-step user flow | Playwright MCP |
+| Forms with modals/iframes | Playwright MCP |
+| Signup/checkout flows | Playwright MCP |
 
 ### Phase 5: PR Creation
 
-When all tests pass and acceptance criteria are met:
+When all tasks complete:
 
-1. **Final commit** (if any uncommitted changes)
-
-2. **Use /beehiiv:create-pr skill** to create the PR
-
-3. **Output completion promise:**
-   ```
-   <promise>COMPLETE</promise>
-   ```
+1. Final commit if needed
+2. Use /beehiiv:create-pr skill
+3. Output: `<promise>COMPLETE</promise>`
 
 ### Commit Guidelines
 
-After EACH completed task (not at the end):
+After EACH task (not at the end):
 
 ```bash
 git add -A
@@ -279,110 +198,100 @@ git commit -m "$(cat <<'EOF'
 {type}: {short description}
 
 - {What changed}
-- {Why it changed}
 
 Ticket: {TICKET_ID}
+EOF
+)"
 ```
-
-Types: `feat`, `fix`, `refactor`, `test`, `docs`, `style`, `chore`
 
 ### Progress File Format
 
-Update `progress.txt` after each significant action:
+Keep progress.txt updated:
 
 ```
-## Iteration {N}
+# {TICKET_ID}: {Title}
 
-### Completed
-- {Task description} - {files changed}
-- Decision: {key decision and reasoning}
+## Goal Tasks
+- [x] Task 1: Find CSS issue
+- [x] Task 2: Fix container height
+- [ ] Task 3: Visual validation
+- [ ] Task 4: Create PR
 
-### Next
-- {Next task to tackle}
+## Current: Task 3
+Status: Implementation complete, validating...
 
-### Blockers
-- {Any blockers or questions}
-```
-
-### Learning Updates
-
-If you discover:
-- A useful pattern → note for CLAUDE.md
-- A common pitfall → note for CLAUDE.md
-- A missing skill → note for skill creation
-- A project convention → note for CLAUDE.md
-
-At end of workflow, summarize learnings for user to review and add to CLAUDE.md.
-
-### Common Patterns (swarm/beehiiv)
-
-**Dream Components - Mobile responsive attributes:**
-When adding mobile-specific settings to dream-components:
-1. Add `mobile{Property}` to type definition (e.g., `mobileWidth`, `mobilePadding`)
-2. Use CSS variables in styles: `var(--mobile-width, var(--width))`
-3. Pass CSS variables in component: `'--mobile-width': mobileWidth`
-4. Update BOTH the component AND the view file (e.g., `SignupModalView.tsx`)
-5. Use `AddableSettings` + `SimpleLengthSettings` for optional mobile overrides in settings panel
-
-**Dream Components - CSS variables for responsive styles:**
-Always use CSS variables, NOT inline styles for responsive properties. Inline styles override CSS media queries.
-```tsx
-// ✓ Correct
-style={{ '--border-radius': borderRadius }}
-
-// ✗ Wrong - breaks mobile override
-style={{ borderRadius: borderRadius }}
-```
-
-### Output Format Per Iteration
-
-Each iteration should output:
-
-```
-## Iteration {N}/{max}
-
-### Task List
-- [x] Completed task 1
-- [x] Completed task 2
-- [ ] **Current:** {current task}
-- [ ] Pending task 4
-
-### Current Action
-{What you're doing now}
-
-### Status
-{pass/fail} Tests | {pass/fail} Biome | {committed/pending} Git
-
-### Notes
-{Any questions, blockers, or discoveries}
+## Log
+- Found issue in SurveyForm.tsx line 45
+- Fixed by removing min-height: 100vh
+- Committed: fix: remove extra whitespace in survey form
 ```
 
 ## Error Recovery
 
-**If implementation is stuck:**
-1. Review progress.txt for context
-2. Check git log for what's been done
+If stuck:
+1. Check progress.txt for context
+2. Check git log
 3. Ask user for guidance
-4. Document the resolution
-
-**If tests keep failing:**
-1. Isolate the failing test
-2. Debug step by step
-3. If it's a flaky test, note it
-4. If it's a real bug, fix it
-5. Never skip tests without user approval
 
 ## Completion
 
 Output `<promise>COMPLETE</promise>` ONLY when:
-- All acceptance criteria are met
-- All tests pass
-- PR is created successfully
-- progress.txt is up to date
+- All goal tasks marked [x]
+- PR created successfully
 
-## Cleanup
+## Example Full Output
 
-After workflow completion, remind user:
-- Delete progress.txt (session-specific)
-- Run `work-tickets --cleanup` if worktrees were used
-- Review suggested CLAUDE.md updates
+```
+## WEB-6135 - Starting
+
+- [ ] Investigate CSS causing white block
+- [ ] Fix the container/layout issue
+- [ ] Visual validation with Playwright
+- [ ] Create PR
+
+---
+
+## WEB-6135 - Iteration 1/10
+
+- [x] Investigate CSS causing white block
+- [ ] **→ Fix the container/layout issue** (current)
+- [ ] Visual validation with Playwright
+- [ ] Create PR
+
+Status: ✓ Lint | ✓ Tests | ○ Pending
+
+---
+
+## WEB-6135 - Iteration 2/10
+
+- [x] Investigate CSS causing white block
+- [x] Fix the container/layout issue
+- [ ] **→ Visual validation with Playwright** (current)
+- [ ] Create PR
+
+Status: ✓ Lint | ✓ Tests | ✓ Committed
+
+---
+
+## WEB-6135 - Iteration 3/10
+
+- [x] Investigate CSS causing white block
+- [x] Fix the container/layout issue
+- [x] Visual validation with Playwright
+- [ ] **→ Create PR** (current)
+
+Status: ✓ Lint | ✓ Tests | ✓ Committed
+
+---
+
+## WEB-6135 - Complete
+
+- [x] Investigate CSS causing white block
+- [x] Fix the container/layout issue
+- [x] Visual validation with Playwright
+- [x] Create PR
+
+PR: https://github.com/beehiiv/swarm/pull/XXXX
+
+<promise>COMPLETE</promise>
+```
