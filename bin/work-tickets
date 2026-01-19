@@ -1,19 +1,29 @@
 #!/bin/bash
 
 # work-tickets - Process multiple Linear tickets in parallel
-# Usage: work-tickets WEB-5503 WEB-5563 WEB-5905
+# Usage: work-tickets TICKET-123 TICKET-456
 #
 # Each ticket gets:
-# - Its own git worktree at ~/Desktop/swarm-{ticket-id}
-# - A dedicated Warp terminal tab
-# - Claude Code running with /analyze-linear-ticket
-# - Automatic PR creation via /create-pr when complete
+# - Its own git worktree
+# - A dedicated terminal split/tab
+# - Claude Code running with your workflow
+#
+# Configure via ~/.work-tickets.conf or environment variables
 
-REPO_DIR="$HOME/Desktop/swarm"
-WORKTREE_BASE="$HOME/Desktop/swarm"
+# Default configuration (override in ~/.work-tickets.conf)
+REPO_DIR="${WORK_TICKETS_REPO:-}"
+WORKTREE_BASE="${WORK_TICKETS_WORKTREE_BASE:-$HOME/worktrees}"
+BRANCH_PREFIX="${WORK_TICKETS_BRANCH_PREFIX:-feature/}"
+WORKTREE_PREFIX="${WORK_TICKETS_WORKTREE_PREFIX:-ticket-}"
 USE_RALPH=false
 MAX_ITERATIONS=""
 TERMINAL=""
+
+# Load user config if exists
+CONFIG_FILE="$HOME/.work-tickets.conf"
+if [ -f "$CONFIG_FILE" ]; then
+  source "$CONFIG_FILE"
+fi
 
 # Detect available terminal
 detect_terminal() {
@@ -39,27 +49,75 @@ print_usage() {
   echo -e "${BLUE}Usage:${NC} work-tickets [OPTIONS] <TICKET-ID> [TICKET-ID...]"
   echo ""
   echo -e "${BLUE}Examples:${NC}"
-  echo "  work-tickets WEB-5503"
-  echo "  work-tickets WEB-5503 WEB-5563 WEB-5905"
-  echo "  work-tickets --ralph WEB-5503           # Use Ralph workflow"
-  echo "  work-tickets --ralph --iterations 30 WEB-5503"
-  echo "  work-tickets --terminal iterm WEB-5503  # Use iTerm2"
+  echo "  work-tickets PROJ-123"
+  echo "  work-tickets PROJ-123 PROJ-456 PROJ-789"
+  echo "  work-tickets --ralph PROJ-123              # Use Ralph workflow"
+  echo "  work-tickets --ralph --iterations 30 PROJ-123"
+  echo "  work-tickets --terminal iterm PROJ-123    # Use iTerm2"
+  echo "  work-tickets --repo /path/to/repo PROJ-123"
   echo ""
   echo -e "${BLUE}Options:${NC}"
-  echo "  -h, --help           Show this help message"
-  echo "  --cleanup            Remove all ticket worktrees"
-  echo "  --list               List existing ticket worktrees"
-  echo "  --ralph              Use Ralph Loop workflow (iterative development)"
-  echo "  --iterations <n>     Max iterations for Ralph (default: auto based on task size)"
-  echo "  --terminal <name>    Terminal to use: warp, iterm, terminal (auto-detected if not set)"
+  echo "  -h, --help             Show this help message"
+  echo "  --cleanup              Remove all ticket worktrees"
+  echo "  --list                 List existing ticket worktrees"
+  echo "  --ralph                Use Ralph Loop workflow (iterative development)"
+  echo "  --iterations <n>       Max iterations for Ralph"
+  echo "  --terminal <name>      Terminal to use: warp, iterm, terminal"
+  echo "  --repo <path>          Path to main git repository"
+  echo "  --init                 Create sample config file"
+  echo ""
+  echo -e "${BLUE}Configuration:${NC}"
+  echo "  Create ~/.work-tickets.conf with:"
+  echo ""
+  echo "    REPO_DIR=\"/path/to/your/repo\""
+  echo "    WORKTREE_BASE=\"\$HOME/worktrees\""
+  echo "    BRANCH_PREFIX=\"yourname/\""
+  echo "    WORKTREE_PREFIX=\"ticket-\""
+  echo ""
+  echo "  Or set environment variables:"
+  echo "    WORK_TICKETS_REPO, WORK_TICKETS_WORKTREE_BASE,"
+  echo "    WORK_TICKETS_BRANCH_PREFIX, WORK_TICKETS_WORKTREE_PREFIX"
+}
+
+create_config() {
+  if [ -f "$CONFIG_FILE" ]; then
+    echo -e "${YELLOW}Config file already exists:${NC} $CONFIG_FILE"
+    echo "Edit it manually or delete it first."
+    exit 1
+  fi
+
+  cat > "$CONFIG_FILE" << 'EOF'
+# work-tickets configuration
+# Uncomment and modify the values below
+
+# Path to your main git repository (required)
+# REPO_DIR="$HOME/projects/my-repo"
+
+# Where to create worktrees (default: ~/worktrees)
+# WORKTREE_BASE="$HOME/worktrees"
+
+# Branch name prefix (default: feature/)
+# BRANCH_PREFIX="yourname/"
+
+# Worktree directory prefix (default: ticket-)
+# WORKTREE_PREFIX="ticket-"
+EOF
+
+  echo -e "${GREEN}✓${NC} Created config file: $CONFIG_FILE"
+  echo "  Edit it to set your REPO_DIR and other preferences."
 }
 
 cleanup_worktrees() {
+  if [ -z "$REPO_DIR" ]; then
+    echo -e "${RED}Error:${NC} REPO_DIR not configured. Run 'work-tickets --init' first."
+    exit 1
+  fi
+
   echo -e "${YELLOW}Cleaning up ticket worktrees...${NC}"
   cd "$REPO_DIR" || exit 1
-  for dir in "$WORKTREE_BASE"/swarm-WEB-*; do
+  for dir in "$WORKTREE_BASE"/${WORKTREE_PREFIX}*; do
     if [ -d "$dir" ]; then
-      ticket=$(basename "$dir" | sed 's/swarm-//')
+      ticket=$(basename "$dir" | sed "s/${WORKTREE_PREFIX}//")
       echo -e "  Removing ${BLUE}$ticket${NC}..."
       git worktree remove "$dir" --force 2>/dev/null
     fi
@@ -70,16 +128,16 @@ cleanup_worktrees() {
 list_worktrees() {
   echo -e "${BLUE}Existing ticket worktrees:${NC}"
   found=false
-  for dir in "$WORKTREE_BASE"/swarm-WEB-*; do
+  for dir in "$WORKTREE_BASE"/${WORKTREE_PREFIX}*; do
     if [ -d "$dir" ]; then
       found=true
-      ticket=$(basename "$dir" | sed 's/swarm-//')
+      ticket=$(basename "$dir" | sed "s/${WORKTREE_PREFIX}//")
       branch=$(cd "$dir" && git branch --show-current 2>/dev/null)
       echo -e "  ${GREEN}$ticket${NC} → $dir (branch: $branch)"
     fi
   done
   if [ "$found" = false ]; then
-    echo "  No ticket worktrees found."
+    echo "  No ticket worktrees found in $WORKTREE_BASE"
   fi
 }
 
@@ -95,6 +153,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     -h|--help)
       print_usage
+      exit 0
+      ;;
+    --init)
+      create_config
       exit 0
       ;;
     --cleanup)
@@ -117,6 +179,10 @@ while [[ $# -gt 0 ]]; do
       TERMINAL="$2"
       shift 2
       ;;
+    --repo)
+      REPO_DIR="$2"
+      shift 2
+      ;;
     *)
       TICKETS+=("$1")
       shift
@@ -134,14 +200,30 @@ if [ ${#TICKETS[@]} -eq 0 ]; then
   exit 1
 fi
 
+# Verify repo is configured
+if [ -z "$REPO_DIR" ]; then
+  echo -e "${RED}Error:${NC} REPO_DIR not configured."
+  echo ""
+  echo "Either:"
+  echo "  1. Run 'work-tickets --init' to create a config file"
+  echo "  2. Use --repo /path/to/repo"
+  echo "  3. Set WORK_TICKETS_REPO environment variable"
+  exit 1
+fi
+
 # Verify repo exists
 if [ ! -d "$REPO_DIR/.git" ]; then
   echo -e "${RED}Error:${NC} Repository not found at $REPO_DIR"
   exit 1
 fi
 
+# Create worktree base if needed
+mkdir -p "$WORKTREE_BASE"
+
 # Show detected terminal
 echo -e "${BLUE}Using terminal:${NC} $DETECTED_TERMINAL"
+echo -e "${BLUE}Repository:${NC} $REPO_DIR"
+echo -e "${BLUE}Worktree base:${NC} $WORKTREE_BASE"
 
 echo -e "${BLUE}╔══════════════════════════════════════════════╗${NC}"
 if [ "$USE_RALPH" = true ]; then
@@ -154,20 +236,26 @@ echo ""
 
 # Process each ticket
 for TICKET_ID in "${TICKETS[@]}"; do
-  WORKTREE_DIR="$WORKTREE_BASE/swarm-$TICKET_ID"
-  # Get branch name from Linear ticket format (lowercase)
-  BRANCH_NAME="safa/$(echo "$TICKET_ID" | tr '[:upper:]' '[:lower:]')"
+  WORKTREE_DIR="$WORKTREE_BASE/${WORKTREE_PREFIX}$TICKET_ID"
+  # Get branch name (lowercase ticket ID)
+  BRANCH_NAME="${BRANCH_PREFIX}$(echo "$TICKET_ID" | tr '[:upper:]' '[:lower:]')"
 
   echo -e "${YELLOW}Processing ${BLUE}$TICKET_ID${NC}..."
 
   # Fetch latest from origin first
   cd "$REPO_DIR" || exit 1
-  git fetch origin main --quiet
+  git fetch origin main --quiet 2>/dev/null || git fetch origin master --quiet 2>/dev/null
+
+  # Determine default branch
+  DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+  if [ -z "$DEFAULT_BRANCH" ]; then
+    DEFAULT_BRANCH="main"
+  fi
 
   # Create worktree if it doesn't exist
   if [ ! -d "$WORKTREE_DIR" ]; then
-    # Try to create new branch from origin/main
-    if git worktree add "$WORKTREE_DIR" -b "$BRANCH_NAME" origin/main 2>/dev/null; then
+    # Try to create new branch from origin's default branch
+    if git worktree add "$WORKTREE_DIR" -b "$BRANCH_NAME" "origin/$DEFAULT_BRANCH" 2>/dev/null; then
       echo -e "  ${GREEN}✓${NC} Created new worktree with branch ${BLUE}$BRANCH_NAME${NC}"
     elif git worktree add "$WORKTREE_DIR" "$BRANCH_NAME" 2>/dev/null; then
       echo -e "  ${GREEN}✓${NC} Created worktree from existing branch ${BLUE}$BRANCH_NAME${NC}"
@@ -186,20 +274,18 @@ for TICKET_ID in "${TICKETS[@]}"; do
     if [ -n "$MAX_ITERATIONS" ]; then
       ITERATIONS_ARG=" --max-iterations $MAX_ITERATIONS"
     fi
-    # Keep command simple for AppleScript compatibility
     CLAUDE_COMMAND="/ralph-workflow $TICKET_ID$ITERATIONS_ARG"
   else
-    # Standard workflow - simple command
+    # Standard workflow
     CLAUDE_COMMAND="/analyze-linear-ticket $TICKET_ID && /review-and-fix && /create-pr"
   fi
 
   # Build the full terminal command
-  TERMINAL_CMD="cd $WORKTREE_DIR && cc '$CLAUDE_COMMAND'"
+  TERMINAL_CMD="cd $WORKTREE_DIR && claude '$CLAUDE_COMMAND'"
 
   # Open split/tab based on terminal type
   case "$DETECTED_TERMINAL" in
     warp)
-      # Warp: Cmd+D for vertical split
       osascript -e "tell application \"Warp\" to activate" \
                 -e "delay 0.5" \
                 -e "tell application \"System Events\" to keystroke \"d\" using command down" \
@@ -209,7 +295,6 @@ for TICKET_ID in "${TICKETS[@]}"; do
                 -e "tell application \"System Events\" to keystroke return"
       ;;
     iterm)
-      # iTerm2: Cmd+D for vertical split
       osascript -e "tell application \"iTerm\" to activate" \
                 -e "delay 0.5" \
                 -e "tell application \"System Events\" to keystroke \"d\" using command down" \
@@ -219,7 +304,6 @@ for TICKET_ID in "${TICKETS[@]}"; do
                 -e "tell application \"System Events\" to keystroke return"
       ;;
     terminal)
-      # macOS Terminal: Cmd+T for new tab (no native split)
       osascript -e "tell application \"Terminal\" to activate" \
                 -e "delay 0.5" \
                 -e "tell application \"System Events\" to keystroke \"t\" using command down" \
@@ -231,7 +315,7 @@ for TICKET_ID in "${TICKETS[@]}"; do
   esac
 
   echo -e "  ${GREEN}✓${NC} Started Claude agent in split pane"
-  sleep 1  # Small delay between panes to prevent race conditions
+  sleep 1
 done
 
 echo ""
@@ -241,7 +325,7 @@ echo -e "${GREEN}╚════════════════════
 echo ""
 echo -e "${BLUE}Worktrees:${NC}"
 for TICKET_ID in "${TICKETS[@]}"; do
-  echo -e "  • ${YELLOW}$TICKET_ID${NC} → ~/Desktop/swarm-$TICKET_ID"
+  echo -e "  • ${YELLOW}$TICKET_ID${NC} → $WORKTREE_BASE/${WORKTREE_PREFIX}$TICKET_ID"
 done
 echo ""
 if [ "$USE_RALPH" = true ]; then
