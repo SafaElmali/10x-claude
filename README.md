@@ -1,0 +1,211 @@
+# 10x-claude
+
+Supercharge your Claude Code with custom agents, skills, commands, and parallel ticket processing. Ship faster.
+
+## Quick Install
+
+```bash
+git clone https://github.com/SafaElmali/10x-claude.git
+cd 10x-claude
+./install.sh
+```
+
+## What's Included
+
+### Custom Agents
+
+Specialized AI agents for different development tasks:
+
+| Agent | Description |
+|-------|-------------|
+| `backend-developer` | API design, database work, server-side logic, authentication |
+| `frontend-developer` | React/Next.js components, state management, accessibility |
+| `fullstack-developer` | End-to-end feature development |
+| `code-reviewer` | Bug detection, security analysis, code quality |
+| `project-manager` | Sprint planning, task organization, project docs |
+
+### Skills
+
+Reusable skills that Claude can invoke:
+
+| Skill | Command | Description |
+|-------|---------|-------------|
+| Ralph Workflow | `/ralph-workflow` | Comprehensive Linear ticket workflow with iterative development |
+| React Best Practices | `/react-best-practices` | 40+ performance optimization rules |
+| Web Design Guidelines | `/web-design-guidelines` | UI/UX review against best practices |
+| Agent Identifier | `/agent-identifier` | Help creating custom Claude agents |
+| Skill Writer | `/skill-writer` | Guide for creating new skills |
+
+### Commands
+
+Custom slash commands for common workflows:
+
+| Command | Description |
+|---------|-------------|
+| `/analyze-linear-ticket` | Fetch and analyze a Linear ticket |
+| `/create-pr` | Create a PR with proper description |
+| `/review-pr` | Review a GitHub pull request |
+| `/review-and-fix` | Comprehensive code review with auto-fix |
+
+### Tools
+
+#### work-tickets CLI
+
+Process multiple Linear tickets in parallel with dedicated worktrees:
+
+```bash
+# Single ticket
+work-tickets WEB-5503
+
+# Multiple tickets (opens in split panes)
+work-tickets WEB-5503 WEB-5563 WEB-5905
+
+# Use Ralph workflow for iterative development
+work-tickets --ralph WEB-5503
+
+# Cleanup when done
+work-tickets --cleanup
+```
+
+### Custom Statusline
+
+A rich statusline showing:
+- Current model and working directory
+- Git repo, branch, and commit info
+- Uncommitted changes indicator
+- Lines added/removed
+- Context window usage (visual bricks)
+- Session duration and cost
+
+## Required Plugins
+
+After running the install script, install these plugins:
+
+```bash
+claude plugins add ralph-loop@claude-plugins-official
+claude plugins add frontend-design@claude-plugins-official
+claude plugins add context7@claude-plugins-official
+claude plugins add feature-dev@claude-plugins-official
+claude plugins add code-review@claude-plugins-official
+claude plugins add linear@claude-plugins-official
+claude plugins add playwright@claude-plugins-official
+claude plugins add supabase@claude-plugins-official
+claude plugins add pr-review-toolkit@claude-plugins-official
+```
+
+Or all at once:
+
+```bash
+claude plugins add ralph-loop@claude-plugins-official frontend-design@claude-plugins-official context7@claude-plugins-official feature-dev@claude-plugins-official code-review@claude-plugins-official linear@claude-plugins-official playwright@claude-plugins-official supabase@claude-plugins-official pr-review-toolkit@claude-plugins-official
+```
+
+## Manual Installation
+
+If you prefer manual setup:
+
+1. **Symlink directories** to `~/.claude/`:
+   ```bash
+   ln -s /path/to/repo/agents ~/.claude/agents
+   ln -s /path/to/repo/skills ~/.claude/skills
+   ln -s /path/to/repo/commands ~/.claude/commands
+   ```
+
+2. **Copy statusline**:
+   ```bash
+   cp statusline.sh ~/.claude/statusline.sh
+   chmod +x ~/.claude/statusline.sh
+   ```
+
+3. **Install work-tickets**:
+   ```bash
+   cp bin/work-tickets ~/bin/
+   chmod +x ~/bin/work-tickets
+   ```
+
+4. **Configure settings.json** (see `settings.json.example`):
+   ```json
+   {
+     "statusLine": {
+       "type": "command",
+       "command": "~/.claude/statusline.sh",
+       "padding": 0
+     }
+   }
+   ```
+
+5. **Add ~/bin to PATH** (if not already):
+   ```bash
+   export PATH="$HOME/bin:$PATH"
+   ```
+
+## Uninstall
+
+```bash
+./uninstall.sh
+```
+
+This will:
+- Remove symlinks from `~/.claude/`
+- Optionally remove `work-tickets` from `~/bin/`
+- Optionally restore from backup (if one exists)
+
+## Customization
+
+### Adding Custom Agents
+
+Create a new `.md` file in `agents/`:
+
+```markdown
+---
+name: my-agent
+description: What this agent does
+colors:
+  light: "#hex"
+  dark: "#hex"
+---
+
+Your agent's system prompt here...
+```
+
+### Adding Custom Skills
+
+Create a new directory in `skills/` with a `SKILL.md` file. See existing skills for examples.
+
+### Modifying Statusline
+
+Edit `~/.claude/statusline.sh` after installation (it's copied, not symlinked, so your changes persist).
+
+## Repository Structure
+
+```
+10x-claude/
+├── README.md                    # This file
+├── install.sh                   # Installer script
+├── uninstall.sh                 # Uninstaller script
+├── settings.json.example        # Example settings
+├── statusline.sh                # Custom statusline script
+├── bin/
+│   └── work-tickets             # Multi-ticket CLI tool
+├── agents/
+│   ├── backend-developer.md
+│   ├── code-reviewer.md
+│   ├── frontend-developer.md
+│   ├── fullstack-developer.md
+│   └── project-manager.md
+├── skills/
+│   ├── agent-identifier/
+│   ├── ralph-workflow/
+│   ├── react-best-practices/
+│   ├── skill-writer/
+│   └── web-design-guidelines/
+└── commands/
+    └── custom/
+        ├── analyze-linear-ticket.md
+        ├── create-pr.md
+        ├── review-and-fix.md
+        └── review-pr.md
+```
+
+## License
+
+MIT
