@@ -176,13 +176,13 @@ REPEAT until all acceptance criteria met OR max iterations reached:
 
 ### Feedback Loops (run after EVERY change)
 
-**For frontend changes (swarm project):**
+**For frontend changes:**
 ```bash
 # Lint check (includes formatting and import organization)
 pnpm lint
+# or: npm run lint
 
 # If node_modules not installed, skip local linting - CI will catch issues
-# The CI runs: biome check ./src --linter-enabled=true --formatter-enabled=false
 ```
 
 **For all changes:**
@@ -219,7 +219,7 @@ When all tests pass and acceptance criteria are met:
 
 1. **Final commit** (if any uncommitted changes)
 
-2. **Use /beehiiv:create-pr skill** to create the PR
+2. **Use /create-pr command** to create the PR
 
 3. **Output completion promise:**
    ```
@@ -271,17 +271,9 @@ If you discover:
 
 At end of workflow, summarize learnings for user to review and add to CLAUDE.md.
 
-### Common Patterns (swarm/beehiiv)
+### Common Patterns
 
-**Dream Components - Mobile responsive attributes:**
-When adding mobile-specific settings to dream-components:
-1. Add `mobile{Property}` to type definition (e.g., `mobileWidth`, `mobilePadding`)
-2. Use CSS variables in styles: `var(--mobile-width, var(--width))`
-3. Pass CSS variables in component: `'--mobile-width': mobileWidth`
-4. Update BOTH the component AND the view file (e.g., `SignupModalView.tsx`)
-5. Use `AddableSettings` + `SimpleLengthSettings` for optional mobile overrides in settings panel
-
-**Dream Components - CSS variables for responsive styles:**
+**CSS variables for responsive styles:**
 Always use CSS variables, NOT inline styles for responsive properties. Inline styles override CSS media queries.
 ```tsx
 // ✓ Correct
