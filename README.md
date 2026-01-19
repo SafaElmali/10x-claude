@@ -91,12 +91,15 @@ claude plugins add linear@claude-plugins-official
 claude plugins add playwright@claude-plugins-official
 claude plugins add supabase@claude-plugins-official
 claude plugins add pr-review-toolkit@claude-plugins-official
+claude plugins add github@claude-plugins-official
+claude plugins add agent-sdk-dev@claude-plugins-official
+claude plugins add claude-mem@thedotmack
 ```
 
 Or all at once:
 
 ```bash
-claude plugins add ralph-loop@claude-plugins-official frontend-design@claude-plugins-official context7@claude-plugins-official feature-dev@claude-plugins-official code-review@claude-plugins-official linear@claude-plugins-official playwright@claude-plugins-official supabase@claude-plugins-official pr-review-toolkit@claude-plugins-official
+claude plugins add ralph-loop@claude-plugins-official frontend-design@claude-plugins-official context7@claude-plugins-official feature-dev@claude-plugins-official code-review@claude-plugins-official linear@claude-plugins-official playwright@claude-plugins-official supabase@claude-plugins-official pr-review-toolkit@claude-plugins-official github@claude-plugins-official agent-sdk-dev@claude-plugins-official claude-mem@thedotmack
 ```
 
 ## Manual Installation
