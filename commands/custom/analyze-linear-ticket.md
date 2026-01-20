@@ -88,7 +88,7 @@ Process links in this priority:
 
 #### 4.5 Loom video
 - If a Loom link is included:
-  - Get transcript via: `esr bin/-/loom-transcriptor.ts <loom-url>`
+  - Get transcript via: `npx tsx bin/-/loom-transcriptor.ts <loom-url>`
   - Use transcript to capture reproduction steps, expected behavior, and edge cases.
 
 ### 5) Handle the issue (implementation)
