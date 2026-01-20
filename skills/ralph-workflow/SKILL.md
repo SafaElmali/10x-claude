@@ -53,10 +53,19 @@ No verbose explanations. Just the task list with progress markers.
    Use mcp__plugin_linear_linear__get_issue to fetch ticket details
    ```
 
-2. **Analyze ticket and create task list:**
+2. **Create or verify branch naming:**
+   - Branch format: `safa/<task-id>/<desc>`
+   - Example: `safa/WEB-5553/navbar-anchor-links`
+   - `<desc>` should be short kebab-case summary (3-5 words max)
+   - If branch exists with wrong format, create new branch with correct format
+   ```bash
+   git checkout -b safa/{TICKET_ID}/{short-desc}
+   ```
+
+3. **Analyze ticket and create task list:**
    Break down the ticket into specific implementation tasks. These are the ACTUAL tasks you will complete, not phases.
 
-3. **Create progress.txt with goal task list:**
+4. **Create progress.txt with goal task list:**
    ```
    # {TICKET_ID}: {Ticket Title}
 
@@ -71,7 +80,7 @@ No verbose explanations. Just the task list with progress markers.
    Started: {timestamp}
    ```
 
-4. **Output the task list immediately:**
+5. **Output the task list immediately:**
    ```
    ## {TICKET_ID} - Starting
 
@@ -185,8 +194,34 @@ When bug requires reproducing a user flow (signup, checkout, forms with CAPTCHA)
 When all tasks complete:
 
 1. Final commit if needed
-2. Use /beehiiv:create-pr skill
-3. Output: `<promise>COMPLETE</promise>`
+2. Push branch: `git push -u origin <branch-name>`
+3. Create PR with this exact format:
+
+```bash
+gh pr create --title "[{TICKET_ID}](linear-url): {task-title}" --body "$(cat <<'EOF'
+## Summary
+
+{Start with a concise paragraph explaining:
+- What was wrong / missing (the issue)
+- What changed to solve it}
+
+{Follow with bullets summarizing the key changes:}
+- {Key change 1}
+- {Key change 2}
+- {Key change 3}
+
+## Test plan
+
+- [ ] {Manual test step 1}
+- [ ] {Manual test step 2}
+- [ ] {Verify specific behavior}
+
+Ticket: {TICKET_ID}
+EOF
+)"
+```
+
+4. Output: `<promise>COMPLETE</promise>`
 
 ### Commit Guidelines
 
