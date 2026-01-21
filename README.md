@@ -20,9 +20,7 @@ Specialized AI agents for different development tasks:
 |-------|-------------|
 | `backend-developer` | API design, database work, server-side logic, authentication |
 | `frontend-developer` | React/Next.js components, state management, accessibility |
-| `fullstack-developer` | End-to-end feature development |
-| `code-reviewer` | Bug detection, security analysis, code quality |
-| `project-manager` | Sprint planning, task organization, project docs |
+| `fullstack-developer` | End-to-end feature development spanning frontend and backend |
 
 ### Skills
 
@@ -33,7 +31,7 @@ Reusable skills that Claude can invoke:
 | Ralph Workflow | `/ralph-workflow` | Comprehensive Linear ticket workflow with iterative development |
 | React Best Practices | `/react-best-practices` | 40+ performance optimization rules |
 | Web Design Guidelines | `/web-design-guidelines` | UI/UX review against best practices |
-| Agent Identifier | `/agent-identifier` | Help creating custom Claude agents |
+| Browser Automation | `/browser-automation` | Browser automation for testing and scraping |
 | Skill Writer | `/skill-writer` | Guide for creating new skills |
 
 ### Commands
@@ -43,9 +41,10 @@ Custom slash commands for common workflows:
 | Command | Description |
 |---------|-------------|
 | `/analyze-linear-ticket` | Fetch and analyze a Linear ticket |
-| `/create-pr` | Create a PR with proper description |
-| `/review-pr` | Review a GitHub pull request |
-| `/review-and-fix` | Comprehensive code review with auto-fix |
+| `/create-pr` | Create branch, commit, and PR from Linear ticket |
+| `/review-and-fix` | Comprehensive code review with auto-fix using 6 agents |
+
+> **Note:** For PR review without auto-fix, use the plugin: `/pr-review-toolkit:review-pr`
 
 ### Tools
 
@@ -86,20 +85,19 @@ claude plugins add ralph-loop@claude-plugins-official
 claude plugins add frontend-design@claude-plugins-official
 claude plugins add context7@claude-plugins-official
 claude plugins add feature-dev@claude-plugins-official
-claude plugins add code-review@claude-plugins-official
 claude plugins add linear@claude-plugins-official
 claude plugins add playwright@claude-plugins-official
 claude plugins add supabase@claude-plugins-official
 claude plugins add pr-review-toolkit@claude-plugins-official
 claude plugins add github@claude-plugins-official
 claude plugins add agent-sdk-dev@claude-plugins-official
-claude plugins add claude-mem@thedotmack
+claude plugins add plugin-dev@claude-plugins-official
 ```
 
 Or all at once:
 
 ```bash
-claude plugins add ralph-loop@claude-plugins-official frontend-design@claude-plugins-official context7@claude-plugins-official feature-dev@claude-plugins-official code-review@claude-plugins-official linear@claude-plugins-official playwright@claude-plugins-official supabase@claude-plugins-official pr-review-toolkit@claude-plugins-official github@claude-plugins-official agent-sdk-dev@claude-plugins-official claude-mem@thedotmack
+claude plugins add ralph-loop@claude-plugins-official frontend-design@claude-plugins-official context7@claude-plugins-official feature-dev@claude-plugins-official linear@claude-plugins-official playwright@claude-plugins-official supabase@claude-plugins-official pr-review-toolkit@claude-plugins-official github@claude-plugins-official agent-sdk-dev@claude-plugins-official plugin-dev@claude-plugins-official
 ```
 
 ## Manual Installation
@@ -162,9 +160,8 @@ Create a new `.md` file in `agents/`:
 ---
 name: my-agent
 description: What this agent does
-colors:
-  light: "#hex"
-  dark: "#hex"
+model: inherit
+color: blue
 ---
 
 Your agent's system prompt here...
@@ -191,12 +188,10 @@ Edit `~/.claude/statusline.sh` after installation (it's copied, not symlinked, s
 │   └── work-tickets             # Multi-ticket CLI tool
 ├── agents/
 │   ├── backend-developer.md
-│   ├── code-reviewer.md
 │   ├── frontend-developer.md
-│   ├── fullstack-developer.md
-│   └── project-manager.md
+│   └── fullstack-developer.md
 ├── skills/
-│   ├── agent-identifier/
+│   ├── browser-automation/
 │   ├── ralph-workflow/
 │   ├── react-best-practices/
 │   ├── skill-writer/
@@ -205,8 +200,7 @@ Edit `~/.claude/statusline.sh` after installation (it's copied, not symlinked, s
     └── custom/
         ├── analyze-linear-ticket.md
         ├── create-pr.md
-        ├── review-and-fix.md
-        └── review-pr.md
+        └── review-and-fix.md
 ```
 
 ## License
