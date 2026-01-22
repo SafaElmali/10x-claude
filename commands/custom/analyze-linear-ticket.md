@@ -209,10 +209,29 @@ The agent will:
 - Run lint/tests as applicable
 - **NOT commit or push** (use `/beehiiv:create-pr` separately after reviewing changes)
 
-### 8) Summary
+### 8) Quality checks (automatic for frontend)
 
-After the agent completes, provide:
+**If the scope is UI-only or Full-stack**, automatically run these checks after implementation:
+
+#### 8.1 React Best Practices Review
+For any React/Next.js code changed:
+- Check for performance issues (waterfalls, bundle size, unnecessary re-renders)
+- Apply rules from `/react-best-practices` skill
+- Fix any CRITICAL or HIGH severity issues found
+
+#### 8.2 Web Design Guidelines Review
+For any UI components changed:
+- Fetch latest guidelines from: `https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md`
+- Check accessibility (a11y), UX patterns, and design compliance
+- Fix any violations found
+
+**Skip these checks** for backend-only work.
+
+### 9) Summary
+
+After the agent completes (and quality checks if applicable), provide:
 - What was implemented (file-by-file summary)
+- Quality check results (if frontend work)
 - How to verify the changes work
 - Any risks or follow-ups identified
 - Reminder: Use `/beehiiv:create-pr` to commit and create PR when ready

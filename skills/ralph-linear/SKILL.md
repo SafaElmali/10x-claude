@@ -256,6 +256,32 @@ When bug requires reproducing a user flow (signup, checkout, forms with CAPTCHA)
 | Forms with modals/iframes | Playwright MCP |
 | Signup/checkout flows | Playwright MCP |
 
+### Phase 4.5: Quality Checks (automatic for frontend)
+
+**If agent is frontend-developer or fullstack-developer**, run these checks before PR:
+
+#### React Best Practices
+For any React/Next.js code changed:
+- Check for performance issues (waterfalls, bundle size, re-renders)
+- Apply rules from `/react-best-practices` skill
+- Fix any CRITICAL or HIGH severity issues
+
+#### Web Design Guidelines
+For any UI components changed:
+- Fetch guidelines from: `https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md`
+- Check accessibility (a11y) and UX patterns
+- Fix any violations found
+
+**Output:**
+```
+## {TICKET_ID} - Quality Checks
+
+✓ React Best Practices: {N issues found, N fixed}
+✓ Web Design Guidelines: {N issues found, N fixed}
+```
+
+**Skip for backend-developer** agent.
+
 ### Phase 5: PR Creation
 
 When all tasks complete:
