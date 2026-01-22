@@ -31,6 +31,7 @@ bin/              # CLI tools (work-tickets)
 
 | Command | Purpose |
 |---------|---------|
+| `review-pr` | Review PR with inline GitHub comments |
 | `analyze-linear-ticket` | Fetch ticket, implement locally |
 | `create-pr` | Branch, commit, push, create PR |
 | `review-and-fix` | 6-agent review with auto-fix |

@@ -55,12 +55,12 @@ No verbose explanations. Just the task list with progress markers.
    ```
 
 2. **Create or verify branch naming:**
-   - Branch format: `safa/<task-id>/<desc>`
-   - Example: `safa/WEB-5553/navbar-anchor-links`
+   - Branch format: `<username>/<task-id>/<desc>`
+   - Example: `john/WEB-5553/navbar-anchor-links`
    - `<desc>` should be short kebab-case summary (3-5 words max)
    - If branch exists with wrong format, create new branch with correct format
    ```bash
-   git checkout -b safa/{TICKET_ID}/{short-desc}
+   git checkout -b <username>/{TICKET_ID}/{short-desc}
    ```
 
 3. **Analyze ticket and create task list:**
@@ -419,7 +419,7 @@ Status: ✓ Lint | ✓ Tests | ✓ Committed
 - [x] Visual validation with Playwright
 - [x] Create PR
 
-PR: https://github.com/beehiiv/swarm/pull/XXXX
+PR: https://github.com/your-org/your-repo/pull/XXXX
 
 <promise>COMPLETE</promise>
 ```

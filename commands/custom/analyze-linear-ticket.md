@@ -207,7 +207,7 @@ Once approved, use the **Task tool** to spawn the selected agent:
 The agent will:
 - Implement the changes locally
 - Run lint/tests as applicable
-- **NOT commit or push** (use `/beehiiv:create-pr` separately after reviewing changes)
+- **NOT commit or push** (use `/create-pr` separately after reviewing changes)
 
 ### 8) Quality checks (automatic for frontend)
 
@@ -234,7 +234,7 @@ After the agent completes (and quality checks if applicable), provide:
 - Quality check results (if frontend work)
 - How to verify the changes work
 - Any risks or follow-ups identified
-- Reminder: Use `/beehiiv:create-pr` to commit and create PR when ready
+- Reminder: Use `/create-pr` to commit and create PR when ready
 
 ## Output expectations
 
@@ -243,7 +243,7 @@ When done, provide:
 - What was implemented (file-by-file summary)
 - How to verify (steps)
 - Any risks / follow-ups
-- Next step: `/beehiiv:create-pr {TICKET_ID}` to create PR
+- Next step: `/create-pr {TICKET_ID}` to create PR
 
 ## DO NOT DO (Strict)
 

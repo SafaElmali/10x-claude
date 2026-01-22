@@ -22,7 +22,7 @@ Create a correctly named git branch for a Linear task, prepare a conventional co
    - `<task-id>` from the Linear issue key (e.g., `WEB-2041`)
    - `<desc>` as a short, kebab-case summary (e.g., `add-product-page`)
 2. Create branch in this format:
-   - `safa/<task-id>/<desc>`
+   - `<username>/<task-id>/<desc>` (e.g., `john/WEB-2041/add-product-page`)
 3. Run:
    - `git checkout -b <branch-name>`
 

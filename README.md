@@ -54,11 +54,10 @@ Custom slash commands for common workflows:
 
 | Command | Description |
 |---------|-------------|
+| `/review-pr` | Review PR with inline GitHub comments (human-tone feedback) |
 | `/analyze-linear-ticket` | Fetch and analyze a Linear ticket |
 | `/create-pr` | Create branch, commit, and PR from Linear ticket |
 | `/review-and-fix` | Comprehensive code review with auto-fix using 6 agents |
-
-> **Note:** For PR review without auto-fix, use the plugin: `/pr-review-toolkit:review-pr`
 
 ### Tools
 
@@ -213,7 +212,8 @@ Edit `~/.claude/statusline.sh` after installation (it's copied, not symlinked, s
     └── custom/
         ├── analyze-linear-ticket.md
         ├── create-pr.md
-        └── review-and-fix.md
+        ├── review-and-fix.md
+        └── review-pr.md
 ```
 
 ## License
