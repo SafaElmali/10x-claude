@@ -28,10 +28,25 @@ Reusable skills that Claude can invoke:
 
 | Skill | Command | Description |
 |-------|---------|-------------|
-| Ralph Linear | `/ralph-linear` | Comprehensive Linear ticket workflow with iterative development |
-| React Best Practices | `/react-best-practices` | 40+ performance optimization rules |
-| Web Design Guidelines | `/web-design-guidelines` | UI/UX review against best practices |
+| Ralph Linear | `/ralph-linear` | Comprehensive Linear ticket workflow (auto-applies quality checks for frontend) |
+| React Best Practices | `/react-best-practices` | 40+ performance optimization rules (auto-applied in ralph-linear) |
+| Web Design Guidelines | `/web-design-guidelines` | UI/UX review against best practices (auto-applied in ralph-linear) |
 | Browser Automation | `/browser-automation` | Browser automation for testing and scraping |
+
+#### agent-browser vs Playwright MCP
+
+| | **agent-browser CLI** | **Playwright MCP** |
+|---|---|---|
+| **Speed** | Faster for simple tasks | More overhead |
+| **Best for** | Screenshots, quick checks | Complex multi-step flows |
+| **State** | Stateless between commands | Maintains browser session |
+
+```
+Need a screenshot?           → agent-browser
+Testing a user flow?         → Playwright MCP
+Simple click + verify?       → agent-browser
+Login → do stuff → verify?   → Playwright MCP
+```
 
 ### Commands
 
