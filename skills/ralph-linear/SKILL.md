@@ -1,22 +1,22 @@
 ---
-name: ralph-workflow
+name: ralph-linear
 description: |
-  Comprehensive Ralph Loop workflow for Linear tickets. Combines PM agent for PRD, agent selection (frontend/backend), iterative development with progress tracking, and automated PR creation.
+  Comprehensive Ralph Loop workflow for Linear tickets. Combines PRD creation, agent selection (frontend/backend/fullstack), iterative development with progress tracking, and automated PR creation.
 
   Use when working on Linear tickets that need structured development with quality gates.
 
   <example>
-  user: "/ralph-workflow WEB-1234"
-  assistant: "Starting Ralph workflow for WEB-1234..."
+  user: "/ralph-linear WEB-1234"
+  assistant: "Starting Ralph Linear workflow for WEB-1234..."
   </example>
 
   <example>
   user: "work on ticket WEB-5503 with ralph"
-  assistant: "I'll use the ralph-workflow to process this ticket with structured development."
+  assistant: "I'll use ralph-linear to process this ticket with structured development."
   </example>
 ---
 
-# Ralph Workflow
+# Ralph Linear Workflow
 
 You are executing a structured Ralph Loop development workflow. Follow this process precisely.
 
@@ -26,6 +26,7 @@ Parse the input for:
 - `TICKET_ID` - Linear ticket ID (e.g., WEB-1234) - REQUIRED
 - `--max-iterations <n>` - Max iterations (default: 10 for small, 30 for large)
 - `--skip-prd` - Skip PRD generation phase
+- `--auto` - Skip the plan approval gate and proceed automatically
 
 ## Output Format
 
@@ -103,6 +104,72 @@ Create a brief PRD in progress.txt:
 - {criterion 1}
 - {criterion 2}
 ```
+
+### Phase 1.5: Clarification & Plan Approval
+
+**If `--auto` flag is present:** Skip this phase entirely. Display the plan briefly and proceed directly to Phase 2 (Implementation) without waiting for approval.
+
+**Otherwise:** Before starting implementation, ensure requirements are clear and get user approval.
+
+#### Step 1: Identify Unclear Requirements
+
+Review the ticket and PRD. If ANYTHING is unclear, ask questions BEFORE proposing tasks:
+
+```
+## {TICKET_ID} - Clarification Needed
+
+I have some questions before creating the implementation plan:
+
+1. {Question about unclear requirement}
+2. {Question about edge case}
+3. {Question about design/behavior}
+```
+
+Keep asking questions until you have clarity on:
+- Expected behavior and edge cases
+- Design specifications (if UI work)
+- API contracts (if backend work)
+- Scope boundaries (what's NOT included)
+
+**Do NOT proceed to the plan until all ambiguities are resolved.**
+
+#### Step 2: Present Plan for Approval
+
+Once requirements are clear, present the plan and **STOP to wait for user confirmation**:
+
+```
+## {TICKET_ID} - Plan Review
+
+**Problem:** {one sentence from PRD}
+**Solution:** {one sentence from PRD}
+
+### Proposed Tasks
+1. {Task 1 description}
+2. {Task 2 description}
+3. {Task 3 description}
+4. Visual validation
+5. Create PR
+
+### Agent: {frontend-developer | backend-developer | fullstack-developer}
+**Reasoning:** {why this agent was selected}
+
+### Files likely to change:
+- {file path 1}
+- {file path 2}
+
+---
+**Approve this plan? (y/n/adjust)**
+```
+
+**Wait for user response before proceeding:**
+
+| Response | Action |
+|----------|--------|
+| `y` / `yes` / `approve` | Continue to Phase 2 implementation |
+| `n` / `no` | Ask what's wrong, revise the plan |
+| `adjust` / custom feedback | Incorporate user's modifications, re-present plan |
+
+Do NOT proceed to implementation until user explicitly approves.
 
 ### Phase 2: Agent Selection
 

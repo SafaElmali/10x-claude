@@ -28,11 +28,10 @@ Reusable skills that Claude can invoke:
 
 | Skill | Command | Description |
 |-------|---------|-------------|
-| Ralph Workflow | `/ralph-workflow` | Comprehensive Linear ticket workflow with iterative development |
+| Ralph Linear | `/ralph-linear` | Comprehensive Linear ticket workflow with iterative development |
 | React Best Practices | `/react-best-practices` | 40+ performance optimization rules |
 | Web Design Guidelines | `/web-design-guidelines` | UI/UX review against best practices |
 | Browser Automation | `/browser-automation` | Browser automation for testing and scraping |
-| Skill Writer | `/skill-writer` | Guide for creating new skills |
 
 ### Commands
 
@@ -192,9 +191,8 @@ Edit `~/.claude/statusline.sh` after installation (it's copied, not symlinked, s
 │   └── fullstack-developer.md
 ├── skills/
 │   ├── browser-automation/
-│   ├── ralph-workflow/
+│   ├── ralph-linear/
 │   ├── react-best-practices/
-│   ├── skill-writer/
 │   └── web-design-guidelines/
 └── commands/
     └── custom/
