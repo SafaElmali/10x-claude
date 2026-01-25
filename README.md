@@ -18,9 +18,10 @@ Specialized AI agents for different development tasks:
 
 | Agent | Description |
 |-------|-------------|
-| `backend-developer` | API design, database work, server-side logic, authentication |
+| `backend-developer` | API design, database work, server-side logic (Node/TS) |
 | `frontend-developer` | React/Next.js components, state management, accessibility |
 | `fullstack-developer` | End-to-end feature development spanning frontend and backend |
+| `senior-rails-backend-dev` | Rails/Ruby specialist: ActiveRecord, Sidekiq, service objects |
 
 ### Skills
 
@@ -58,6 +59,7 @@ Custom slash commands for common workflows:
 | `/analyze-linear-ticket` | Fetch and analyze a Linear ticket |
 | `/create-pr` | Create branch, commit, and PR from Linear ticket |
 | `/review-and-fix` | Comprehensive code review with auto-fix using 6 agents |
+| `/summarize-changes` | Summarize changes in PM-friendly language, post to Linear |
 
 ### Tools
 
@@ -202,7 +204,8 @@ Edit `~/.claude/statusline.sh` after installation (it's copied, not symlinked, s
 ├── agents/
 │   ├── backend-developer.md
 │   ├── frontend-developer.md
-│   └── fullstack-developer.md
+│   ├── fullstack-developer.md
+│   └── senior-rails-backend-dev.md
 ├── skills/
 │   ├── browser-automation/
 │   ├── ralph-linear/
@@ -213,7 +216,8 @@ Edit `~/.claude/statusline.sh` after installation (it's copied, not symlinked, s
         ├── analyze-linear-ticket.md
         ├── create-pr.md
         ├── review-and-fix.md
-        └── review-pr.md
+        ├── review-pr.md
+        └── summarize-changes.md
 ```
 
 ## License
