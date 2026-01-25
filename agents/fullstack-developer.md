@@ -122,7 +122,7 @@ When implementing features, organize work by layer:
 - Types used across layers
 ```
 
-**Common Patterns:**
+**Common Patterns (beehiiv/swarm):**
 
 - Use TypeScript for type safety across the stack
 - API routes in Next.js App Router format

@@ -35,14 +35,16 @@ bin/              # CLI tools (work-tickets)
 | `analyze-linear-ticket` | Fetch ticket, implement locally |
 | `create-pr` | Branch, commit, push, create PR |
 | `review-and-fix` | 6-agent review with auto-fix |
+| `summarize-changes` | Summarize changes in PM-friendly language, post to Linear |
 
 ## Agents
 
 | Agent | Scope |
 |-------|-------|
 | `frontend-developer` | UI/React/CSS |
-| `backend-developer` | API/DB/server |
-| `fullstack-developer` | Both |
+| `backend-developer` | API/DB/server (Node/TS) |
+| `senior-rails-backend-dev` | Rails/Ruby/Sidekiq/ActiveRecord |
+| `fullstack-developer` | Both frontend + backend |
 
 ## Conventions
 

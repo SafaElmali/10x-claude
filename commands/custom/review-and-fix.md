@@ -10,11 +10,30 @@ Perform comprehensive code review using specialized agents, then auto-fix issues
 
 ### 1) Capture Changes
 
-Run `git diff` to capture all uncommitted changes. If there are no changes, check for staged changes with `git diff --cached`. If still no changes, inform the user there's nothing to review.
+1. **Get all changes (staged + unstaged):**
+   - Run `git diff HEAD` to capture all uncommitted changes (both staged and unstaged)
+   - If empty, run `git diff origin/main...HEAD` to check committed but unpushed changes
+   - If still no changes, inform the user: "No changes to review."
 
-### 2) Launch Specialized Review Agents
+2. **List changed files:**
+   - Run `git diff HEAD --name-only` to get list of modified files
+   - Note file types (Ruby, TypeScript, etc.) for context
 
-Launch all 6 pr-review-toolkit agents **in parallel** using the Task tool to review the changes:
+### 2) Lint First (Fast Fail)
+
+**Run lint before launching agents to catch simple issues quickly:**
+
+1. **JS/TS lint:** Run `pnpm lint`
+2. **Ruby lint:** For changed Ruby files, run `bundle exec rubocop <files> --format simple`
+3. If lint fails:
+   - Show lint errors to user
+   - Ask: "Fix lint errors before full review, or continue anyway?"
+   - If user wants to fix first: **STOP** and let them fix
+   - If user wants to continue: proceed but note lint issues
+
+### 3) Launch Specialized Review Agents
+
+Launch all 6 pr-review-toolkit agents **in parallel** using the Task tool:
 
 | Agent | Focus Area |
 |-------|------------|
@@ -30,7 +49,7 @@ For each agent, provide:
 - Context about what files were changed
 - Request they return findings with severity levels
 
-### 3) Aggregate Findings
+### 4) Aggregate Findings
 
 Collect all agent findings and categorize by severity:
 
@@ -51,21 +70,40 @@ Collect all agent findings and categorize by severity:
 - Comment improvements
 - Minor style issues
 
-### 4) Auto-Fix Issues
+### 5) Auto-Fix Issues
 
-Fix all **CRITICAL** and **IMPORTANT** issues automatically:
-- Apply fixes one by one
-- Ensure each fix doesn't break the build
-- Run tests after fixes if a test runner is available
+Fix all **CRITICAL** and **IMPORTANT** issues:
 
-### 5) Re-Review (if needed)
+1. Apply fixes one by one
+2. After each fix, verify it doesn't break syntax
+3. If a fix is unclear or risky, ask the user before applying
+4. Track what was fixed for the final report
 
-If fixes were applied:
-- Run a focused re-review on the fixed code
+### 6) Verify Fixes
+
+After all fixes are applied:
+
+1. **Run JS/TS lint:** `pnpm lint`
+   - If lint fails on fixed code, adjust the fix
+   - Do not leave lint errors from your fixes
+
+2. **Run Ruby lint:** For changed Ruby files, run `bundle exec rubocop <files> --format simple`
+   - Fix any line length (max 120 chars) or indentation issues
+   - Do not leave rubocop offenses
+
+3. **Check for changed spec files:**
+   - Run `git diff HEAD --name-only | grep '_spec\.rb$'`
+   - If spec files were modified: run those specific specs
+   - If specs fail: report which tests fail, attempt to fix
+
+### 7) Re-Review (if needed)
+
+If significant fixes were applied:
+- Run a focused re-review on the fixed code only
 - Maximum 2 review iterations to prevent infinite loops
 - Only re-check the specific issues that were fixed
 
-### 6) Final Report
+### 8) Final Report
 
 Present a summary to the user:
 
@@ -84,11 +122,37 @@ Present a summary to the user:
 - Issues found: X
 - Issues fixed: Y
 - Review iterations: Z
+- Lint status: passing
 ```
 
-## Important Notes
+### 9) Update PR Body (if major changes)
 
-- **Do not commit** any changes - leave that to /create-pr
-- If a fix is unclear or risky, ask the user before applying
-- If build/tests fail after a fix, revert that specific fix and report it
-- Focus on substantive issues, not style nitpicks
+If **major changes** were made during review (new methods, logic changes, architectural fixes):
+
+1. **Check if PR exists:**
+   ```bash
+   gh pr view --json number,body 2>/dev/null
+   ```
+
+2. **If PR exists and major changes were made:**
+   - Get current PR body
+   - Append a "## Review Changes" section summarizing what was fixed
+   - Update PR body:
+   ```bash
+   gh pr edit <PR_NUMBER> --body "<updated_body>"
+   ```
+
+3. **What counts as major changes:**
+   - New methods or functions added
+   - Logic flow changes
+   - Security fixes
+   - New test cases added
+   - NOT: lint fixes, formatting, minor refactors
+
+## DO NOT DO (Strict)
+
+- **Do not commit** any changes - leave that to `/create-pr`
+- **Do not run** the full test suite (only changed spec files)
+- **Do not fix** SUGGESTIONS automatically - only report them
+- **Do not loop** more than 2 review iterations
+- **Do not leave** lint errors from your own fixes

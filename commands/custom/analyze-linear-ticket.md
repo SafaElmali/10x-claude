@@ -1,252 +1,142 @@
 ---
 description: Handle Linear tasks by fetching issue details and comments via Linear MCP, then implementing changes locally. Requires Linear MCP server.
-argument-hint: <linear-issue-id> [--auto]
+argument-hint: <linear-issue-id> [--confirm]
 ---
 
-# Linear Task Handler (MCP-gated)
+# Linear Task Handler
 
-Handle a Linear task safely and consistently by fetching issue details + comments, validating alignment, and implementing changes **without** committing/pushing or commenting on the task.
+Handle a Linear task by fetching issue details + comments, validating alignment, and implementing changes **without** committing/pushing.
 
 ## Arguments
 
-Parse the input for:
 - `TICKET_ID` - Linear ticket ID (e.g., WEB-1234) - REQUIRED
-- `--auto` - Skip the plan approval gate and proceed automatically
+- `--confirm` - Show plan and wait for approval before proceeding (default: auto-proceed)
 
-## Hard Gate (Must do before anything)
+## Hard Gate
 
-1. **Check available MCP servers**.
-2. If **no Linear MCP** is available:
-   - **STOP immediately**
-   - Tell the user: "No Linear MCP found; I can't proceed."
+1. Check available MCP servers
+2. If **no Linear MCP** available → **STOP** and tell user: "No Linear MCP found; I can't proceed."
 
 ## Workflow
 
-### 1) Fetch issue details
+### 1) Fetch & Analyze
 
-Use Linear MCP method: `get_issue`
+Use Linear MCP to gather context:
+- `get_issue` - Get title, description, status, priority, labels, assignee, acceptance criteria
+- `list_comments` - Get clarifications, design notes, extra requirements
 
-Capture:
-- Title
-- Description
-- Status / priority
-- Labels
-- Assignee
-- Links (Figma, Loom, files, screenshots, Slack threads)
-- Any acceptance criteria or expected behavior
+**Consistency check:** If description and comments conflict or create ambiguity → **STOP** and ask user to clarify.
 
-### 2) List comments
+### 2) Process linked resources (if any)
 
-Use Linear MCP method: `list_comments`
+If the ticket includes links (Figma, Loom, screenshots, Slack), extract relevant context:
+- **Figma:** Use Figma MCP if available to get specs
+- **Loom:** Get transcript via `npx tsx ~/bin/loom-transcriptor.ts <url>`
+- **Screenshots:** Analyze for expected vs actual behavior
+- If an MCP is required but unavailable, note it and continue with available info
 
-Extract:
-- Extra requirements
-- Clarifications
-- Design/product notes
-- Links (Figma/Loom/files/Slack threads)
-- Any contradictions vs description
+### 3) Scope & Agent Selection
 
-### 3) Consistency check (Stop condition)
+Use Glob/Grep to identify files likely to change based on keywords, paths, and patterns.
 
-Compare **issue description** vs **comments**:
-- If they differ in a way that suggests an ongoing external thread (e.g., Slack-driven change, evolving requirements) or create ambiguity about what to build:
-  - **STOP**
-  - Tell the user exactly what differs and ask them to resolve/confirm.
+**Categorize scope:**
+- **UI-only:** React components, CSS, client-side logic → `frontend-developer`
+- **Backend-only (Node/TS):** API routes, DB queries, TypeScript backend → `backend-developer`
+- **Backend-only (Rails):** Ruby/Rails, ActiveRecord, Sidekiq, service objects → `senior-rails-backend-dev`
+- **Full-stack:** Both UI and backend → `fullstack-developer`
 
-### 4) Linked resources handling
+**Break into 3-7 implementation tasks** ordered by dependencies.
 
-Process links in this priority:
+### 4) Plan Approval Gate
 
-#### 4.1 File links (if provided)
-- If user shares file links, assume changes likely relate to those files.
-- Inspect those files first.
-- Still do a quick repo-wide check to confirm scope and avoid missing related code.
+**Default:** Display plan briefly and proceed to step 5.
 
-#### 4.2 Slack thread link
-- If the task includes a **Slack thread link** (in the issue or comments):
-  1. **Verify Slack MCP exists**.
-  2. If **Slack MCP is not available**:
-     - **STOP** and report: "Slack MCP not available; can't read the Slack thread."
-  3. If available:
-     - Open the Slack thread and **read all messages in the thread** (including attachments/snippets where accessible).
-     - Extract:
-       - Any requirement changes vs the issue description/comments
-       - Repro steps, expected behavior, edge cases
-       - Any "final decision" message (often near the end)
-       - Links to assets (Figma, screenshots, logs)
-     - Then **re-run the consistency check**:
-       - If Slack messages introduce new requirements or contradict the Linear issue/comments in a way that creates ambiguity:
-         - **STOP**
-         - Report the exact differences and ask the user to resolve/confirm what to implement.
-
-#### 4.3 Figma link
-- If the task includes a Figma link:
-  - Verify **Figma MCP** exists.
-  - If not available:
-    - **STOP** and report: "Figma MCP not available; can't extract design details."
-  - If available:
-    - Fetch relevant frames/specs and extract UI requirements.
-
-#### 4.4 Screenshot
-- If a screenshot is included:
-  - Analyze it to understand expected vs actual behavior.
-  - Note visible UI states, errors, copy, layout issues, and any environment hints.
-
-#### 4.5 Loom video
-- If a Loom link is included:
-  - Get transcript via: `npx tsx ~/bin/loom-transcriptor.ts <loom-url>`
-  - Use transcript to capture reproduction steps, expected behavior, and edge cases.
-
-### 5) Task analysis & agent selection
-
-After gathering all context, analyze what needs to be built:
-
-#### 5.1 Scope identification
-
-Use Glob and Grep to identify files likely to change based on:
-- Keywords from the ticket (component names, API endpoints, etc.)
-- File paths mentioned in description/comments
-- Related code patterns
-
-Categorize the scope:
-- **UI-only**: Changes to React components, CSS, styling, client-side logic
-- **Backend-only**: API routes, database queries, server-side logic, migrations
-- **Full-stack**: Both UI and backend changes required
-
-#### 5.2 Agent selection
-
-Based on scope, select the appropriate agent:
-
-| Scope | Agent |
-|-------|-------|
-| UI/CSS/React components only | `frontend-developer` |
-| API/DB/backend logic only | `backend-developer` |
-| Both UI + backend | `fullstack-developer` |
-
-#### 5.3 Task breakdown
-
-Break the ticket into 3-7 specific implementation tasks:
-- Order tasks logically (dependencies first)
-- Be specific about what each task accomplishes
-- Include test/verification steps if applicable
-
-### 6) Plan approval gate
-
-**If `--auto` flag is present:** Skip directly to Phase 7 (Spawn agent) without waiting for approval. Display the plan but proceed immediately.
-
-**Otherwise:** Present the implementation plan to the user and **WAIT for explicit approval** before proceeding.
-
-Display the plan in this format:
+**If `--confirm` flag:** Present plan and **WAIT for approval**:
 
 ```
 ## {TICKET_ID} - Implementation Plan
 
-**Problem:** {one sentence summary of the issue}
-**Solution:** {one sentence description of the approach}
+**Problem:** {one sentence}
+**Solution:** {one sentence}
 
 ### Tasks
-1. {Task 1 - specific action}
-2. {Task 2 - specific action}
-3. {Task 3 - specific action}
+1. {specific action}
+2. {specific action}
 ...
 
-### Agent: {frontend-developer | backend-developer | fullstack-developer}
-**Reasoning:** {why this agent was selected based on the scope}
-
-### Files likely to change:
-- {file path 1}
-- {file path 2}
-- {file path 3}
-...
+### Agent: {selected agent}
+### Files: {list of likely files}
 
 ---
-**Approve this plan? (y/n/adjust)**
+**Approve? (y/n/adjust)**
 ```
 
-Wait for user response:
-- **y / yes / approve**: Proceed to spawn agent
-- **n / no**: Stop and ask what should change
-- **adjust / other feedback**: Modify plan based on feedback, re-present
+- **y/yes:** Proceed
+- **n/no:** Stop, ask what to change
+- **adjust:** Modify and re-present
 
-### 7) Spawn agent
+### 5) Spawn Agent
 
-Once approved, use the **Task tool** to spawn the selected agent:
-
-**Task tool parameters:**
-- `subagent_type`: The selected agent (`frontend-developer`, `backend-developer`, or `fullstack-developer`)
+Use **Task tool** to spawn the selected agent:
+- `subagent_type`: Selected agent
 - `description`: `Implement {TICKET_ID}`
-- `prompt`: Include ALL gathered context in a structured format:
+- `prompt`: Include all gathered context:
 
 ```
 # Task: {TICKET_ID} - {Title}
 
 ## Problem Statement
-{Description from Linear ticket}
+{Description}
 
 ## Acceptance Criteria
-{Extracted acceptance criteria from description/comments}
+{From description/comments}
 
 ## Additional Context
-{Summary of linked resources - Slack thread, Figma specs, Loom transcript, screenshots}
+{Figma specs, Loom transcript, screenshots, Slack summary}
 
 ## Files Likely to Change
-{List of file paths identified during analysis}
+{List}
 
 ## Implementation Tasks
 1. {Task 1}
 2. {Task 2}
-3. {Task 3}
 ...
 
-## Important Notes
-- Do NOT commit or push changes
+## Notes
+- Do NOT commit or push
 - Run lint/tests as applicable
-- Report what changed and how to verify
 ```
 
-The agent will:
-- Implement the changes locally
-- Run lint/tests as applicable
-- **NOT commit or push** (use `/create-pr` separately after reviewing changes)
+### 6) Lint Check (Required)
 
-### 8) Quality checks (automatic for frontend)
+After agent completes, **always run lint** before finishing:
 
-**If the scope is UI-only or Full-stack**, automatically run these checks after implementation:
+1. **Run lint:**
+   ```bash
+   pnpm lint
+   ```
+2. If lint fails:
+   - Fix the lint errors automatically
+   - Re-run lint to verify fixes
+   - Do not proceed until lint passes
 
-#### 8.1 React Best Practices Review
-For any React/Next.js code changed:
-- Check for performance issues (waterfalls, bundle size, unnecessary re-renders)
-- Apply rules from `/react-best-practices` skill
-- Fix any CRITICAL or HIGH severity issues found
+3. **For Ruby files, also run:**
+   ```bash
+   bundle exec rubocop <changed_ruby_files> --format simple
+   ```
+   - Fix any offenses before finishing
 
-#### 8.2 Web Design Guidelines Review
-For any UI components changed:
-- Fetch latest guidelines from: `https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md`
-- Check accessibility (a11y), UX patterns, and design compliance
-- Fix any violations found
+### 7) Summary
 
-**Skip these checks** for backend-only work.
+After agent completes and lint passes, provide:
+- What was implemented (file-by-file)
+- How to verify the changes
+- Any risks or follow-ups
+- Lint status: passing ✓
+- Next step: `/create-pr {TICKET_ID}`
 
-### 9) Summary
+## DO NOT DO
 
-After the agent completes (and quality checks if applicable), provide:
-- What was implemented (file-by-file summary)
-- Quality check results (if frontend work)
-- How to verify the changes work
-- Any risks or follow-ups identified
-- Reminder: Use `/create-pr` to commit and create PR when ready
-
-## Output expectations
-
-When done, provide:
-- What you found (root cause / requirements understood)
-- What was implemented (file-by-file summary)
-- How to verify (steps)
-- Any risks / follow-ups
-- Next step: `/create-pr {TICKET_ID}` to create PR
-
-## DO NOT DO (Strict)
-
-- **Do not commit or push** anything to git.
-- **Do not comment** anything on the Linear task.
-- **Do not skip the approval gate** unless `--auto` flag was provided.
+- **Do not commit or push** anything to git
+- **Do not comment** on the Linear task
+- **Do not wait for approval** unless `--confirm` was provided

@@ -1,7 +1,7 @@
 ---
 name: ralph-linear
 description: |
-  Comprehensive Ralph Loop workflow for Linear tickets. Combines PRD creation, agent selection (frontend/backend/fullstack), iterative development with progress tracking, and automated PR creation.
+  Comprehensive Ralph Loop workflow for Linear tickets. Combines PRD creation, agent selection (frontend/backend/fullstack/rails), iterative development with progress tracking, and automated PR creation.
 
   Use when working on Linear tickets that need structured development with quality gates.
 
@@ -150,7 +150,7 @@ Once requirements are clear, present the plan and **STOP to wait for user confir
 4. Visual validation
 5. Create PR
 
-### Agent: {frontend-developer | backend-developer | fullstack-developer}
+### Agent: {frontend-developer | backend-developer | senior-rails-backend-dev | fullstack-developer}
 **Reasoning:** {why this agent was selected}
 
 ### Files likely to change:
@@ -178,7 +178,8 @@ Select agent based on task type:
 | Task Type | Agent |
 |-----------|-------|
 | UI/CSS only | frontend-developer |
-| API/DB only | backend-developer |
+| API/DB only (Node/TS) | backend-developer |
+| Rails/Ruby backend | senior-rails-backend-dev |
 | Both UI + API | fullstack-developer |
 
 ### Phase 3: Implementation Loop
@@ -280,7 +281,7 @@ For any UI components changed:
 ✓ Web Design Guidelines: {N issues found, N fixed}
 ```
 
-**Skip for backend-developer** agent.
+**Skip for backend-developer and senior-rails-backend-dev** agents.
 
 ### Phase 5: PR Creation
 
